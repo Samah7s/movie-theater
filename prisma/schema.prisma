@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int              @id @default(autoincrement())
+  email           String           @unique
+  firstName       String?          @map("first_name")
+  lastName        String?          @map("last_name")
+  phone           String?
+  hash            String
+  refreshToken    String           @map("refresh_token")
+  tickets         Ticket[]
+  onlinePurchases OnlinePurchase[]
+  bookings        Booking[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Movie {
+  id          Int         @id @default(autoincrement())
+  title       String
+  description String?
+  duration    Int
+  screening   Screening[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("movies")
+}
+
+model Screening {
+  id        Int       @id @default(autoincrement())
+  startTime DateTime  @map("start_time")
+  movie     Movie     @relation(fields: [movieId], references: [id])
+  movieId   Int
+  tickets   Ticket[]
+  bookings  Booking[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+model Ticket {
+  id               Int             @id @default(autoincrement())
+  user             User            @relation(fields: [userId], references: [id])
+  userId           Int
+  screening        Screening       @relation(fields: [screeningId], references: [id])
+  screeningId      Int
+  seat             Seat            @relation(fields: [seatId], references: [id])
+  seatId           Int
+  purchaseType     PurchaseType    @map("purchase_type")
+  status           TicketStatus    @default(RESERVED)
+  onlinePurchase   OnlinePurchase? @relation(fields: [onlinePurchaseId], references: [id])
+  onlinePurchaseId Int?
+  booking          Booking?        @relation(fields: [bookingId], references: [id])
+  bookingId        Int?
+  soldBy           Staff?          @relation(fields: [soldByID], references: [id])
+  soldByID         Int?
+
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
+model Seat {
+  id        Int      @id @default(autoincrement())
+  number    Int
+  row       String
+  tickets   Ticket[]
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("seats")
+}
+
+model Staff {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  firstName    String?  @map("first_name")
+  lastName     String?  @map("last_name")
+  hash         String
+  refreshToken String   @map("refresh_token")
+  role         Role     @relation(fields: [roleId], references: [id])
+  roleId       Int
+  ticketsSold  Ticket[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updateAt  DateTime @updatedAt @map("updated_at")
+}
+
+model Role {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+  staff       Staff[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("roles")
+}
+
+model OnlinePurchase {
+  id            Int            @id @default(autoincrement())
+  user          User           @relation(fields: [userId], references: [id])
+  userId        Int
+  paymentMethod String         @map("payment_method")
+  status        PurchaseStatus @default(PENDING)
+  tickets       Ticket[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+model Booking {
+  id          Int       @id @default(autoincrement())
+  user        User      @relation(fields: [userId], references: [id])
+  userId      Int
+  screening   Screening @relation(fields: [screeningId], references: [id])
+  screeningId Int
+  tickets     Ticket[]
+  expiresAt   DateTime  @map("expires_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+enum TicketStatus {
+  RESERVED
+  PAID
+  CANCELED
+}
+
+enum PurchaseStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum PurchaseType {
+  ONLINE
+  OFFLINE
+}
