@@ -9,7 +9,7 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
-app.use(router);
+app.use('/api', router);
 
 //Run the server
 let httpServer = http.createServer(app);

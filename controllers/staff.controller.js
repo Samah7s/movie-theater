@@ -1,14 +1,23 @@
 const Joi = require('joi');
 const prisma = require('../utils/prisma');
-const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const { generateStaffAccessToken, generateStaffRefreshToken } = require('../utils/token');
+const config = require("../config/index");
 
 
-const schema = Joi.object({
+const registerSchema = Joi.object({
 	email: Joi.string().email().required(),
-	role: Joi.string().required(),
-	name: Joi.string().required(),
-	role_name: Joi.string().required()
+	first_name: Joi.string().required(),
+	last_name: Joi.string().required(),
+	role_name: Joi.string().required(),
+	description: Joi.string(),
+	password: Joi.string().pattern(new RegExp('^[a-zA-Z0-9]{3,30}$')).required(),
+	repeat_password: Joi.ref('password')
+})
+
+const loginSchema = Joi.object({
+	email: Joi.string().email().required(),
+	password: Joi.string().required()
 })
 
 class Staff {
@@ -17,20 +26,40 @@ class Staff {
 		this.signin = this.signin.bind(this);
 	}
 	async signup(req, res) {
+		const { error } = registerSchema.validate(req.body);
 		try {
-			const data = schema.validate(req.body);
+			if (error) {
+				throw new Error(error);
+			}
+			const inputData = req.body;
+			const hash = await bcrypt.hash(inputData.password, 10);
 			const staff = await prisma.staff.create({
 				data: {
-					email: data.value.email,
-					name: data.value.name,
+					email: inputData.email,
+					firstName: inputData.first_name,
+					lastName: inputData.last_name,
+					hash: hash,
+					refreshToken: refresh_token,
 					role: {
 						create: {
-							name: data.value.role_name,
-							description: data.value.description
+							name: config.admin_secret == inputData.role_name ? "ADMIN" : inputData.role_name,
+							description: inputData.description
 						}
 					}
 				}
 			})
+			const access_token = generateStaffAccessToken(staff.roleId, inputData.email);
+			const refresh_token = generateStaffRefreshToken(inputData.email);
+			res.cookie("refreshToken", refresh_token, {
+				maxAge: 1000 * 60 * 60 * 24 * 30,
+				secure: false,
+				httpOnly: true
+			});
+			res.cookie("accessToken", access_token, {
+				maxAge: 60 * 60 * 1000,
+				secure: false,
+				httpOnly: true
+			});
 			res.status(200).json({
 				message: "Staff registered successfully",
 				result: staff
@@ -44,19 +73,53 @@ class Staff {
 	}
 
 	async signin(req, res) {
+		const { error } = loginSchema.validate(req.body);
 		try {
-			const inputData = schema.validate(req.body);
-			const foundUser = await prisma.user.findUnique({
+			if (error) {
+				throw new Error(error);
+			}
+			const inputData = req.body;
+			const foundStaff = await prisma.staff.findUnique({
 				where: {
-					email: inputData.value.email
+					email: inputData.email
 				}
 			});
-			if (!foundUser) {
-				throw new Error("Staff not founded");
+			if (!foundStaff) {
+				throw new Error("Wrong password or email!");
 			}
+			const correctPassword = await bcrypt.compare(inputData.password, foundStaff.hash)
+			if (!correctPassword) {
+				throw new Error("Wrong password or email!");
+			}
+			const refresh_token = generateStaffRefreshToken(inputData.email);
+			const updateResult = await prisma.staff.update({
+				where: {
+					email: inputData.email
+				},
+				data: {
+					refreshToken: refresh_token
+				},
+				select: {
+					id: true,
+					roleId: true,
+					email: true
+				}
+			});
+			const access_token = generateStaffAccessToken(updateResult.roleId, updateResult.email);
+			res.cookie("accessToken", access_token, {
+				maxAge: 60 * 60 * 24 * 1000,
+				secure: false,
+				httpOnly: true
+			});
+			res.cookie("refreshToken", refresh_token, {
+				maxAge: 1000 * 60 * 60 * 24 * 30,
+				secure: false,
+				httpOnly: true
+			});
 			res.status(200).json({
 				message: "Loged in successfully",
-				data: foundUser
+				data: foundStaff,
+				update: updateResult
 			})
 		} catch (error) {
 			res.status(402).json({

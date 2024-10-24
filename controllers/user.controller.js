@@ -21,12 +21,16 @@ class User {
 		this.signin = this.signin.bind(this);
 	}
 	async signup(req, res) {
+		const { error } = registerSchema.validate(req.body);
 		try {
-			const data = registerSchema.validate(req.body);
+			if (error) {
+				throw new Error(error);
+			}
+			const inputData = req.body;
 			console.log(data);
 			const userExist = await prisma.user.findUnique({
 				where: {
-					email: data.value.email
+					email: inputData.email
 				}
 			});
 			if (userExist) {
@@ -34,12 +38,12 @@ class User {
 					message: "Current email already in use, please login"
 				})
 			}
-			const hash = await bcrypt.hash(data.value.password, 10);
-			const access_token = generateAccessToken(data.value.email);
-			const refresh_token = generateRefreshToken(data.value.email);
+			const hash = await bcrypt.hash(inputData.password, 10);
+			const access_token = generateAccessToken(inputData.email);
+			const refresh_token = generateRefreshToken(inputData.email);
 			const user = await prisma.user.create({
 				data: {
-					email: data.value.email,
+					email: inputData.email,
 					hash: hash,
 					refreshToken: refresh_token
 				}
@@ -50,7 +54,7 @@ class User {
 				httpOnly: true
 			});
 			res.cookie("accessToken", access_token, {
-				maxAge: 60 * 60 * 24 * 1000,
+				maxAge: 60 * 2 * 1000,
 				secure: false,
 				httpOnly: true
 			});
@@ -67,35 +71,52 @@ class User {
 	}
 
 	async signin(req, res) {
+		const { error } = loginSchema.validate(req.body);
 		try {
-			const inputData = loginSchema.validate(req.body);
+			if (error) {
+				throw new Error(error);
+			}
+			const inputData = req.body;
 			const foundUser = await prisma.user.findUnique({
 				where: {
 					email: inputData.value.email
 				}
 			});
-			const correctPassword = await bcrypt.compare(inputData.value.password, foundUser.hash)
+			const correctPassword = await bcrypt.compare(inputData.password, foundUser.hash)
 			if (!correctPassword) {
 				throw new Error("Wrong password or email!");
 			}
 			if (!foundUser) {
 				throw new Error("Wrong password or email!");
 			}
-			const access_token = generateAccessToken(inputData.value.email);
-			const refresh_token = generateRefreshToken(inputData.value.email);
+			const access_token = generateAccessToken(inputData.email);
+			const refresh_token = generateRefreshToken(inputData.email);
+			const updateResult = await prisma.user.update({
+				where: {
+					email: inputData.email
+				},
+				data: {
+					refreshToken: refresh_token
+				},
+				select: {
+					id: true
+				}
+			})
 			res.cookie("refreshToken", refresh_token, {
 				maxAge: 1000 * 60 * 60 * 24 * 30,
 				secure: false,
 				httpOnly: true
 			});
 			res.cookie("accessToken", access_token, {
-				maxAge: 60 * 60 * 24 * 1000,
+				maxAge: 60 * 1 * 1000,
 				secure: false,
 				httpOnly: true
 			});
+			console.log('tokens updated')
 			res.status(200).json({
 				message: "Loged in successfully",
-				data: foundUser
+				data: foundUser,
+				update: updateResult
 			})
 		} catch (error) {
 			res.status(402).json({
