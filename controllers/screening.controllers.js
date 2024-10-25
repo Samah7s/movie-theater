@@ -2,8 +2,8 @@ const Joi = require('joi');
 const prisma = require('../utils/prisma');
 
 const screeningSchema = Joi.object({
-	startTime: Joi.string().required(),
-	movieId: Joi.string().required(),
+	number: Joi.string().required(),
+	row: Joi.string().required(),
 })
 
 class Screening {

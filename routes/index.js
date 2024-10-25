@@ -2,11 +2,13 @@ const express = require('express');
 const router = express.Router();
 const authRoute = require('./auth')
 const movieRoute = require('./movie')
+const theaterRoute = require('./theater');
 const ensureAuth = require('../middlewares/ensureAuthenticaiton');
 const unsureAdmin = require('../middlewares/ensureAdmin');
 
 router.use("/auth", authRoute);
 router.use("/movie", movieRoute);
+router.use("/theater", theaterRoute);
 
 router.get("/", (req, res) => {
 	try {

@@ -72,8 +72,8 @@ model Ticket {
 
 model Seat {
   id        Int      @id @default(autoincrement())
-  number    Int
-  row       String
+  number    Int      @unique
+  row       String   @unique
   tickets   Ticket[]
   createdAt DateTime @default(now()) @map("created_at")
 
