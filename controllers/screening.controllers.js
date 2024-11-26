@@ -2,8 +2,8 @@ const Joi = require('joi');
 const prisma = require('../utils/prisma');
 
 const screeningSchema = Joi.object({
-	number: Joi.string().required(),
-	row: Joi.string().required(),
+	startTime: Joi.string().required(),
+	movieId: Joi.string().required(),
 })
 
 class Screening {
@@ -25,7 +25,7 @@ class Screening {
 					startTime: new Date(data.startTime),
 					movie: {
 						connect: {
-							id: Number(data.movieId)
+							id: parseInt(data.movieId)
 						}
 					}
 				}
@@ -35,7 +35,7 @@ class Screening {
 				data: createResult
 			})
 		} catch (error) {
-			res.status(400).json({
+			res.status(500).json({
 				message: "cannot list screening",
 				error: error.message
 			})
@@ -55,7 +55,7 @@ class Screening {
 				data: getResult
 			})
 		} catch (error) {
-			res.status(404).json({
+			res.status(500).json({
 				message: "Cannot get screening",
 				error: error.message
 			})
@@ -69,7 +69,7 @@ class Screening {
 				data: getAllResult
 			})
 		} catch (error) {
-			res.status(404).json({
+			res.status(500).json({
 				message: "Cannot get screening",
 				error: error.message
 			})
@@ -93,7 +93,7 @@ class Screening {
 					startTime: new Date(data.startTime),
 					movie: {
 						connect: {
-							id: Number(data.movieId)
+							id: parseInt(data.movieId)
 						}
 					}
 				}
@@ -103,7 +103,7 @@ class Screening {
 				data: updateResult
 			})
 		} catch (error) {
-			res.status(402).json({
+			res.status(500).json({
 				message: "Cannot update the screening",
 				error: error.message
 			})
@@ -125,7 +125,7 @@ class Screening {
 				data: deleteResult
 			})
 		} catch (error) {
-			res.status(402).json({
+			res.status(500).json({
 				message: "Cannot delete",
 				error: error.message
 			})

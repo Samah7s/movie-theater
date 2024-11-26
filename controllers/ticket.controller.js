@@ -27,14 +27,15 @@ class Ticket {
 				throw new Error(error);
 			}
 			const data = req.body;
+			console.log(req.user);
 			const createResult = await prisma.ticket.create({
 				data: {
-					user: { connect: { id: req.userId } },
+					user: { connect: { id: parseInt(req.user.id) } },
 					screening: { connect: { id: data.screeningId } },
 					seat: { connect: { id: data.seatId } },
 					status: 'RESERVED',
 					purchaseType: 'ONLINE',
-					soldBy: null,
+					soldBy: undefined,
 				}
 			});
 			res.status(200).json({
@@ -42,7 +43,7 @@ class Ticket {
 				data: createResult
 			})
 		} catch (error) {
-			res.status(404).json({
+			res.status(500).json({
 				message: "Tikcet creation failure",
 				error: error.message
 			})
@@ -70,13 +71,30 @@ class Ticket {
 				data: createResult
 			})
 		} catch (error) {
-			res.status(404).json({
+			res.status(500).json({
 				message: "Tikcet creation failure",
 				error: error.message
 			})
 		}
 	}
-	async update() { }
+	async update(req, res) {
+		const id = req.params.id
+		const { status } = req.body
+		try {
+			const updateResult = await prisma.ticket.update({
+				where: { id: parseInt(id) },
+				data: { status },
+			})
+
+			res.status(200).json({
+				message: "Status updated successfully",
+				updateResult
+			})
+		} catch (error) {
+			console.error(error)
+			res.status(500).json({ error: 'An error occurred while updating the ticket status' })
+		}
+	}
 	async get(req, res) {
 		try {
 			const id = req.params.id;
@@ -90,7 +108,7 @@ class Ticket {
 				data: getResult
 			})
 		} catch (error) {
-			res.status(404).json({
+			res.status(500).json({
 				message: "Getiing opearation failure",
 				error: error.message
 			})
@@ -104,7 +122,7 @@ class Ticket {
 				data: getAllResult
 			})
 		} catch (error) {
-			res.status(404).json({
+			res.status(500).json({
 				message: "Getting  opearation failure",
 				error: error.message
 			})
@@ -123,7 +141,7 @@ class Ticket {
 				data: deleteResult
 			})
 		} catch (error) {
-			res.status(404).json({
+			res.status(500).json({
 				message: "Delete opearation failure",
 				error: error.message
 			})

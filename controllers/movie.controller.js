@@ -26,7 +26,7 @@ class Movie {
 				data: {
 					title: data.title,
 					description: data.description,
-					duration: Number(data.duration)
+					duration: parseInt(data.duration)
 				},
 				select: {
 					title: true,
@@ -34,6 +34,7 @@ class Movie {
 					description: true
 				}
 			});
+			console.log(createResult)
 			res.status(200).json({
 				message: "Movie added successfully",
 				data: createResult
@@ -60,7 +61,7 @@ class Movie {
 				data: {
 					title: data.title,
 					description: data.description,
-					duration: data.duration
+					duration: parseInt(data.duration)
 				}
 			});
 			res.status(200).json({

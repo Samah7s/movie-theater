@@ -33,6 +33,7 @@ class Staff {
 			}
 			const inputData = req.body;
 			const hash = await bcrypt.hash(inputData.password, 10);
+			const refresh_token = generateStaffRefreshToken(inputData.email);
 			const staff = await prisma.staff.create({
 				data: {
 					email: inputData.email,
@@ -49,7 +50,6 @@ class Staff {
 				}
 			})
 			const access_token = generateStaffAccessToken(staff.roleId, inputData.email);
-			const refresh_token = generateStaffRefreshToken(inputData.email);
 			res.cookie("refreshToken", refresh_token, {
 				maxAge: 1000 * 60 * 60 * 24 * 30,
 				secure: false,

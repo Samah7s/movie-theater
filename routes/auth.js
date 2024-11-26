@@ -3,12 +3,12 @@ const url = require('url');
 const route = express.Router();
 const user = require('../controllers/user.controller');
 const staff = require('../controllers/staff.controller');
-const { verifyToken, generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('../utils/token');
+const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('../utils/token');
 
 //USER ROUTES
 route.post('/user/signup', user.signup);
-
 route.get('/user/signin', user.signin);
+route.get("/user/signout", user.signout);
 
 //STAFF ROUTES
 route.post('/staff/signup', staff.signup);

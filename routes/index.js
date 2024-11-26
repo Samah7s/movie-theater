@@ -3,12 +3,10 @@ const router = express.Router();
 const authRoute = require('./auth')
 const movieRoute = require('./movie')
 const theaterRoute = require('./theater');
+const adminRoutes = require('./admin');
+const ticketRoute = require('./tickets');
 const ensureAuth = require('../middlewares/ensureAuthenticaiton');
-const unsureAdmin = require('../middlewares/ensureAdmin');
-
-router.use("/auth", authRoute);
-router.use("/movie", movieRoute);
-router.use("/theater", theaterRoute);
+const ensureAdmin = require('../middlewares/ensureAdmin');
 
 router.get("/", (req, res) => {
 	try {
@@ -21,6 +19,7 @@ router.get("/", (req, res) => {
 		})
 	}
 })
+
 router.get('/protected', ensureAuth, (req, res) => {
 	res.status(200).json({
 		message: "Protected source",
@@ -28,16 +27,10 @@ router.get('/protected', ensureAuth, (req, res) => {
 	})
 })
 
-router.get('/admin/dashboard', unsureAdmin, (req, res) => {
-	try {
-		res.status(200).json({
-			message: "Admin dashboard"
-		})
-	} catch (error) {
-		res.status(404).json({
-			message: "Cannot get access to admin dashboard",
-			error: error.message
-		})
-	}
-})
+router.use("/admin", ensureAdmin, adminRoutes);
+router.use("/auth", authRoute);
+router.use("/movie", movieRoute);
+router.use("/ticket", ensureAuth,ticketRoute);
+router.use("/theater", theaterRoute);
+
 module.exports = router;

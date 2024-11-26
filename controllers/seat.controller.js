@@ -90,7 +90,7 @@ class Seat {
 				},
 				data: {
 					rows: inputData.row,
-					number: Number(inputData.number)
+					number: parseInt(inputData.number)
 				}
 			})
 			res.status(200).json({

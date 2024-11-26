@@ -27,14 +27,13 @@ class User {
 				throw new Error(error);
 			}
 			const inputData = req.body;
-			console.log(data);
 			const userExist = await prisma.user.findUnique({
 				where: {
 					email: inputData.email
 				}
 			});
 			if (userExist) {
-				res.status(444).json({
+				res.status(500).json({
 					message: "Current email already in use, please login"
 				})
 			}
@@ -63,7 +62,7 @@ class User {
 				result: user
 			})
 		} catch (error) {
-			res.status(402).json({
+			res.status(500).json({
 				message: "Cannot sing up new user",
 				error: error.message
 			})
@@ -79,7 +78,7 @@ class User {
 			const inputData = req.body;
 			const foundUser = await prisma.user.findUnique({
 				where: {
-					email: inputData.value.email
+					email: inputData.email
 				}
 			});
 			const correctPassword = await bcrypt.compare(inputData.password, foundUser.hash)
@@ -119,8 +118,21 @@ class User {
 				update: updateResult
 			})
 		} catch (error) {
-			res.status(402).json({
+			res.status(500).json({
 				error: error.message
+			})
+		}
+	}
+
+	async signout(req, res) {
+		try {
+			res.clearCookie("accessToken");
+			res.clearCookie("refreshToken").status(200).json({
+				message: "Logged out successfully"
+			})
+		} catch (error) {
+			res.status(500).json({
+				message: "Something gone wrong"
 			})
 		}
 	}
